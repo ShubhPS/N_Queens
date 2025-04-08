@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>N-Queens Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #334e68;
+            --accent-color: #10b981;
+            --light-square: #f8f8f8;
+            --dark-square: #121212;
+            --attack-color: rgba(239, 68, 68, 0.6);
+            --current-color: rgba(16, 185, 129, 0.5);
+            --text-color: #1e293b;
+            --text-light: #64748b;
+            --background-color: #f9fafb;
+            --card-bg: #ffffff;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #a5b4fc, #818cf8, #6366f1);
+            background-attachment: fixed;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+        }
+
+        .header, .footer {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+        }
+        
+        .footer {
+            margin-top: 30px;
+            margin-bottom: 0;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-weight: 700;
+            font-size: 2.2rem;
+        }
+
+        p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+        
+        .designer {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .visualization-container {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button, select, input {
+            font-size: 14px;
+            padding: 10px 18px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.active {
+            background-color: var(--accent-color);
+        }
+
+        select, input {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .mode-toggle {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin: 25px 0;
+        }
+
+        .chessboard {
+            display: grid;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1/1;
+            border: 3px solid var(--secondary-color);
+            box-shadow: var(--card-shadow);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .cell {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            /* Fix the cell size */
+            aspect-ratio: 1/1;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+        }
+
+        .cell.light {
+            background-color: var(--light-square);
+        }
+
+        .cell.dark {
+            background-color: var(--dark-square);
+            color: white;
+        }
+
+        /* Fix for queen placement - use pseudo element and maintain space */
+        .cell::before {
+            content: "";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            font-size: 2.2em;
+            color: #2c3e50;
+            text-shadow: 0 0 3px white;
+            z-index: 2;
+        }
+
+        .cell.queen::before {
+            content: "♕";
+        }
+        
+        .cell.dark.queen::before {
+            text-shadow: 0 0 3px black;
+            color: white;
+        }
+
+        .cell.attacked {
+            position: relative;
+        }
+
+        .cell.attacked::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--attack-color);
+            z-index: 1;
+            animation: pulse 1s infinite alternate;
+        }
+
+        .cell.current {
+            position: relative;
+        }
+
+        .cell.current::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--current-color);
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            from {
+                opacity: 0.7;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .step-display {
+            margin: 20px 0;
+            padding: 18px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            font-size: 1.05rem;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 25px 0 10px;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #f8f9fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-queen {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .legend-queen::after {
+            content: "♕";
+            font-size: 24px;
+            color: #2c3e50;
+        }
+
+        .legend-attacked {
+            background-color: var(--attack-color);
+        }
+
+        .legend-current {
+            background-color: var(--current-color);
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .control-group {
+                justify-content: space-between;
+            }
+
+            h2 {
+                font-size: 1.4em;
+            }
+
+            .header, .footer {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>N-Queens Problem Visualizer</h1>
+            <p>Explore the backtracking algorithm to solve the classic N-Queens puzzle</p>
+        </div>
+
+        <div class="visualization-container">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="board-size">Board Size:</label>
+                    <input type="number" id="board-size" min="4" max="12" value="8">
+                </div>
+                
+                <div class="control-group">
+                    <label for="speed">Speed:</label>
+                    <select id="speed">
+                        <option value="1000">Slow</option>
+                        <option value="500" selected>Medium</option>
+                        <option value="200">Fast</option>
+                        <option value="50">Very Fast</option>
+                    </select>
+                </div>
+                
+                <button id="start-btn">Start Algorithm</button>
+                <button id="pause-btn" disabled>Pause</button>
+                <button id="reset-btn">Reset Board</button>
+            </div>
+            
+            <div class="mode-toggle">
+                <button id="auto-mode-btn" class="active">Algorithm Mode</button>
+                <button id="manual-mode-btn">Interactive Mode</button>
+            </div>
+            
+            <div class="step-display">
+                <strong>Status:</strong>
+                <p id="step-info">Configure the board size and click "Start Algorithm" or switch to "Interactive Mode" to place queens yourself.</p>
+            </div>
+            
+            <div class="board-container">
+                <div class="chessboard" id="chessboard"></div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-queen"></div>
+                    <span>Queen</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-attacked"></div>
+                    <span>Attacked</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-current"></div>
+                    <span>Current Position</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Designed by <span class="designer">Shubh Pratap Singh</span></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const boardSizeInput = document.getElementById('board-size');
+            const speedSelect = document.getElementById('speed');
+            const startBtn = document.getElementById('start-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const autoModeBtn = document.getElementById('auto-mode-btn');
+            const manualModeBtn = document.getElementById('manual-mode-btn');
+            const chessboard = document.getElementById('chessboard');
+            const stepInfo = document.getElementById('step-info');
+            
+            // State variables
+            let boardSize = parseInt(boardSizeInput.value);
+            let board = [];
+            let intervalId = null;
+            let isPaused = false;
+            let isManualMode = false;
+            let currentStep = {
+                row: 0,
+                col: 0,
+                isBacktracking: false,
+                finished: false
+            };
+            
+            // Initialize the board
+            function initializeBoard() {
+                // Get board size from input
+                boardSize = parseInt(boardSizeInput.value);
+                
+                // Initialize empty board
+                board = Array(boardSize).fill().map(() => Array(boardSize).fill(0));
+                
+                // Clear and set up the chessboard DOM
+                chessboard.innerHTML = '';
+                chessboard.style.gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+                chessboard.style.gridTemplateRows = `repeat(${boardSize}, 1fr)`;
+                
+                // Add cells to the board
+                for (let row = 0; row < boardSize; row++) {
+                    for (let col = 0; col < boardSize; col++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('cell');
+                        cell.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+                        cell.dataset.row = row;
+                        cell.dataset.col = col;
+                        
+                        // Add click handler for manual mode
+                        cell.addEventListener('click', () => handleCellClick(row, col));
+                        
+                        chessboard.appendChild(cell);
+                    }
+                }
+                
+                // Reset algorithm state
+                currentStep = {
+                    row: 0,
+                    col: 0,
+                    isBacktracking: false,
+                    finished: false
+                };
+                
+                // Update visual representation without showing attacks
+                updateBoardDisplay(false);
+                
+                if (isManualMode) {
+                    stepInfo.textContent = "Interactive Mode: Click on the board to place queens. Valid placements will be accepted.";
+                } else {
+                    stepInfo.textContent = "Configure the board size and click \"Start Algorithm\" or switch to \"Interactive Mode\"";
+                }
+            }
+            
+            // Check if a position is safe for queen placement
+            function isSafe(row, col) {
+                // Check rows (horizontal)
+                for (let i = 0; i < boardSize; i++) {
+                    if (board[row][i] === 1) {
+                        return false;
+                    }
+                }
+                
+                // Check columns (vertical)
+                for (let i = 0; i < boardSize; i++) {
+                    if (board[i][col] === 1) {
+                        return false;
+                    }
+                }
+                
+                // Check upper-left diagonal
+                for (let i = row, j = col; i >= 0 && j >= 0; i--, j--) {
+                    if (board[i][j] === 1) {
+                        return false;
+                    }
+                }
+                
+                // Check upper-right diagonal
+                for (let i = row, j = col; i >= 0 && j < boardSize; i--, j++) {
+                    if (board[i][j] === 1) {
+                        return false;
+                    }
+                }
+                
+                // Check lower-left diagonal
+                for (let i = row, j = col; i < boardSize && j >= 0; i++, j--) {
+                    if (board[i][j] === 1) {
+                        return false;
+                    }
+                }
+                
+                // Check lower-right diagonal
+                for (let i = row, j = col; i < boardSize && j < boardSize; i++, j++) {
+                    if (board[i][j] === 1) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            }
+            
+            // Find all cells that would be under attack if a queen is placed at (row, col)
+            function findAttackedCellsForPosition(row, col) {
+                const attacked = [];
+                
+                // Mark horizontal and vertical lines
+                for (let i = 0; i < boardSize; i++) {
+                    if (i !== col) attacked.push(`${row},${i}`); // Row
+                    if (i !== row) attacked.push(`${i},${col}`); // Column
+                }
+                
+                // Mark diagonals
+                // Upper-left diagonal
+                for (let i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+                    attacked.push(`${i},${j}`);
+                }
+                
+                // Upper-right diagonal
+                for (let i = row - 1, j = col + 1; i >= 0 && j < boardSize; i--, j++) {
+                    attacked.push(`${i},${j}`);
+                }
+                
+                // Lower-left diagonal
+                for (let i = row + 1, j = col - 1; i < boardSize && j >= 0; i++, j--) {
+                    attacked.push(`${i},${j}`);
+                }
+                
+                // Lower-right diagonal
+                for (let i = row + 1, j = col + 1; i < boardSize && j < boardSize; i++, j++) {
+                    attacked.push(`${i},${j}`);
+                }
+                
+                return attacked;
+            }
+            
+            // Find all cells that are under attack from all placed queens
+            function findAllAttackedCells() {
+                const attacked = new Set();
+                
+                // For each placed queen
+                for (let r = 0; r < boardSize; r++) {
+                    for (let c = 0; c < boardSize; c++) {
+                        if (board[r][c] === 1) {
+                            // Get all attacked cells from this queen
+                            const queenAttacks = findAttackedCellsForPosition(r, c);
+                            queenAttacks.forEach(pos => attacked.add(pos));
+                        }
+                    }
+                }
+                
+                return Array.from(attacked);
+            }
+            
+            // Update the visual representation of the board
+            function updateBoardDisplay(showAttacks = true) {
+                // Clear all special classes but preserve cell colors
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.classList.remove('queen', 'attacked', 'current');
+                });
+                
+                // Place queens
+                for (let row = 0; row < boardSize; row++) {
+                    for (let col = 0; col < boardSize; col++) {
+                        const cellSelector = `.cell[data-row="${row}"][data-col="${col}"]`;
+                        const cell = document.querySelector(cellSelector);
+                        
+                        if (board[row][col] === 1) {
+                            // Place queen
+                            cell.classList.add('queen');
+                        }
+                    }
+                }
+                
+                // Show attacked positions if requested
+                if (showAttacks && !currentStep.finished) {
+                    // In manual mode, or when checking a position
+                    let attackedPositions = [];
+                    
+                    if (isManualMode) {
+                        // In manual mode, show all attacked positions from current queens
+                        attackedPositions = findAllAttackedCells();
+                    } else if (!currentStep.isBacktracking && currentStep.row < boardSize && currentStep.col < boardSize) {
+                        // In auto mode, only show attacked positions for current position being checked
+                        attackedPositions = findAttackedCellsForPosition(currentStep.row, currentStep.col);
+                    }
+                    
+                    // Mark attacked positions
+                    attackedPositions.forEach(pos => {
+                        const [r, c] = pos.split(',').map(Number);
+                        const cellSelector = `.cell[data-row="${r}"][data-col="${c}"]`;
+                        const cell = document.querySelector(cellSelector);
+                        if (cell && board[r][c] !== 1) { // Don't mark queens as attacked
+                            cell.classList.add('attacked');
+                        }
+                    });
+                }
+                
+                // Highlight current position being considered in auto mode
+                if (!isManualMode && !currentStep.finished && currentStep.col < boardSize && currentStep.row < boardSize) {
+                    const currentCell = document.querySelector(
+                        `.cell[data-row="${currentStep.row}"][data-col="${currentStep.col}"]`
+                    );
+                    if (currentCell) {
+                        currentCell.classList.add('current');
+                    }
+                }
+                
+                // Check if all queens are placed in manual mode
+                if (isManualMode) {
+                    const queensPlaced = board.flat().filter(cell => cell === 1).length;
+                    if (queensPlaced === boardSize) {
+                        stepInfo.textContent = "Success! You've placed all " + boardSize + " queens correctly!";
+                    }
+                }
+            }
+            
+            // Calculate next step in the backtracking algorithm
+            function calculateNextStep() {
+                if (currentStep.finished) return;
+                
+                if (currentStep.isBacktracking) {
+                    // Backtracking: Find the last placed queen and remove it
+                    let found = false;
+                    
+                    if (currentStep.col > 0) {
+                        currentStep.col--;
+                        
+                        // Find queen in this column and remove it
+                        for (let row = 0; row < boardSize; row++) {
+                            if (board[row][currentStep.col] === 1) {
+                                board[row][currentStep.col] = 0;
+                                currentStep.row = row + 1; // Try next row
+                                currentStep.isBacktracking = false;
+                                stepInfo.textContent = `Backtracking: Removed queen from position (${row}, ${currentStep.col})`;
+                                found = true;
+                                break;
+                            }
+                        }
+                        
+                        // If we've examined all rows in this column and need to backtrack further
+                        if (!found) {
+                            currentStep.row = 0;
+                            stepInfo.textContent = `Backtracking further from column ${currentStep.col}`;
+                        }
+                        
+                        // If we've backtracked to column 0 and tried all rows, no solution
+                        if (currentStep.col === 0 && currentStep.row >= boardSize) {
+                            currentStep.finished = true;
+                            stepInfo.textContent = "No solution exists for this board size!";
+                            stopVisualization();
+                        }
+                    } else {
+                        // We've backtracked all the way to the beginning without finding a solution
+                        currentStep.finished = true;
+                        stepInfo.textContent = "No solution exists for this board size!";
+                        stopVisualization();
+                    }
+                } else {
+                    // Forward progress: Try placing a queen
+                    while (currentStep.row < boardSize) {
+                        const isSafePosition = isSafe(currentStep.row, currentStep.col);
+                        
+                        // Show attacked cells for current position check
+                        updateBoardDisplay(true);
+                        
+                        if (isSafePosition) {
+                            // Place queen after a short delay
+                            setTimeout(() => {
+                                board[currentStep.row][currentStep.col] = 1;
+                                stepInfo.textContent = `Placed queen at position (${currentStep.row}, ${currentStep.col})`;
+                                
+                                // Move to next column
+                                currentStep.col++;
+                                currentStep.row = 0;
+                                
+                                // Check if we've placed all queens
+                                if (currentStep.col >= boardSize) {
+                                    currentStep.finished = true;
+                                    stepInfo.textContent = "Solution found! All queens have been placed successfully.";
+                                    stopVisualization();
+                                }
+                                
+                                // Update board without showing attacks
+                                updateBoardDisplay(false);
+                            }, parseInt(speedSelect.value) / 2);
+                            
+                            return;
+                        }
+                        
+                        // Try next row in current column after showing the attacks
+                        setTimeout(() => {
+                            currentStep.row++;
+                            updateBoardDisplay(false);
+                        }, parseInt(speedSelect.value) / 2);
+                        return;
+                    }
+                    
+                    // If no valid position in this column, backtrack
+                    if (currentStep.row >= boardSize) {
+                        currentStep.isBacktracking = true;
+                        stepInfo.textContent = `Can't place a queen in column ${currentStep.col}, need to backtrack.`;
+                    }
+                }
+            }
+            
+            // Handle cell click in manual mode
+            function handleCellClick(row, col) {
+                if (!isManualMode || intervalId) return;
+                
+                // If there's already a queen here, remove it
+                if (board[row][col] === 1) {
+                    board[row][col] = 0;
+                    updateBoardDisplay(true);
+                    stepInfo.textContent = `Removed queen from position (${row}, ${col})`;
+                    return;
+                }
+                
+                // Check if the position is safe
+                if (isSafe(row, col)) {
+                    // Place queen
+                    board[row][col] = 1;
+                    stepInfo.textContent = `Placed queen at position (${row}, ${col})`;
+                    
+                    // Update board with new attacks
+                    updateBoardDisplay(true);
+                    
+                    // Check if all queens are placed
+                    const queensPlaced = board.flat().filter(cell => cell === 1).length;
+                    if (queensPlaced === boardSize) {
+                        stepInfo.textContent = "Success! You've placed all " + boardSize + " queens correctly!";
+                    }
+                } else {
+                    // Show why this position is not safe
+                    stepInfo.textContent = `Cannot place queen at (${row}, ${col}) - position is under attack`;
+                    
+                    // Temporarily highlight this position and its attacks
+                    const attackedPositions = findAttackedCellsForPosition(row, col);
+                    
+                    // Mark current cell for visualization
+                    const currentCell = document.querySelector(
+                        `.cell[data-row="${row}"][data-col="${col}"]`
+                    );
+                    if (currentCell) {
+                        currentCell.classList.add('current');
+                    }
+                    
+                    // Show attacks momentarily
+                    attackedPositions.forEach(pos => {
+                        const [r, c] = pos.split(',').map(Number);
+                        const cellSelector = `.cell[data-row="${r}"][data-col="${c}"]`;
+                        const cell = document.querySelector(cellSelector);
+                        if (cell && board[r][c] !== 1) { // Don't mark queens as attacked
+                            cell.classList.add('attacked');
+                        }
+                    });
+                    
+                    // Clear the attack visualization after 1 second
+                    setTimeout(() => {
+                        updateBoardDisplay(true);
+                    }, 1000);
+                }
+            }
+            
+            // Start the visualization
+            function startVisualization() {
+                if (intervalId || isManualMode) return;
+                
+                // Update UI
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                boardSizeInput.disabled = true;
+                autoModeBtn.disabled = true;
+                manualModeBtn.disabled = true;
+                
+                // Start the animation interval
+                const speed = parseInt(speedSelect.value);
+                intervalId = setInterval(() => {
+                    if (!isPaused) {
+                        calculateNextStep();
+                        
+                        if (currentStep.finished) {
+                            stopVisualization();
+                        }
+                    }
+                }, speed);
+            }
+            
+            // Stop the visualization
+            function stopVisualization() {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+                
+                // Update UI
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                boardSizeInput.disabled = false;
+                autoModeBtn.disabled = false;
+                manualModeBtn.disabled = false;
+                
+                // Final update without showing attacks
+                updateBoardDisplay(isManualMode);
+            }
+            
+            // Reset the visualization
+            function resetVisualization() {
+                stopVisualization();
+                initializeBoard();
+                isPaused = false;
+                pauseBtn.textContent = "Pause";
+            }
+            
+            // Toggle pause/resume
+            function togglePause() {
+                isPaused = !isPaused;
+                pauseBtn.textContent = isPaused ? "Resume" : "Pause";
+            }
+            
+            // Switch to manual mode
+            function switchToManualMode() {
+                if (intervalId) stopVisualization();
+                isManualMode = true;
+                autoModeBtn.classList.remove('active');
+                manualModeBtn.classList.add('active');
+                startBtn.disabled = true;
+                pauseBtn.disabled = true;
+                resetVisualization();
+                stepInfo.textContent = "Interactive Mode: Click on the board to place queens. Valid placements will be accepted.";
+                updateBoardDisplay(true);
+            }
+            
+            // Switch to auto mode
+            function switchToAutoMode() {
+                isManualMode = false;
+                manualModeBtn.classList.remove('active');
+                autoModeBtn.classList.add('active');
+                startBtn.disabled = false;
+                resetVisualization();
+                stepInfo.textContent = "Configure the board size and click \"Start Algorithm\" to begin.";
+                updateBoardDisplay(false);
+            }
+            
+            // Event listeners
+            startBtn.addEventListener('click', startVisualization);
+            pauseBtn.addEventListener('click', togglePause);
+            resetBtn.addEventListener('click', resetVisualization);
+            autoModeBtn.addEventListener('click', switchToAutoMode);
+            manualModeBtn.addEventListener('click', switchToManualMode);
+            
+            boardSizeInput.addEventListener('change', function() {
+                const value = parseInt(this.value);
+                if (value < 4) this.value = 4;
+                if (value > 12) this.value = 12;
+                resetVisualization();
+            });
+            
+            // Initialize the board on page load
+            initializeBoard();
+        });
+    </script>
+</body>
+</html>
